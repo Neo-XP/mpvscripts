@@ -1,6 +1,7 @@
 -- vlc style crop for mpv
 -- uses hotey 'c', same as VLC
 -- https://github.com/kism/mpvscripts
+-- Modified so that it can be used to crop to a specific value directly
 
 require "mp.msg"
 require "mp.options"
@@ -11,8 +12,6 @@ local command_prefix = 'no-osd' --set this to null to debug
 
 function get_target_ar(file_ar)
     local result
-    -- Handling the current crop status in this function since its scope needs to transcent this function
-    crop_option = crop_option + 1
 
     if crop_option == 1 then
         mp.osd_message("Crop: 16:10")
@@ -66,11 +65,18 @@ function has_video()
     return false
 end
 
-function on_press()
+function on_press(param)
     -- If it's not cropable, exit.
     if not has_video() then
         mp.msg.warn("autocrop only works for videos.")
         return
+    end
+
+    -- Use param if there is one, use default behavior otherwise
+    if param then
+        crop_option = tonumber(param)
+    else
+        crop_option = crop_option + 1
     end
 
     -- Get current video fields, this doesnt take into consideration pixel aspect ratio
@@ -137,5 +143,6 @@ function on_start()
     crop_option = 0 -- Reset crop option
 end
 
-mp.add_key_binding("c", "toggle_crop", on_press)
+mp.add_key_binding("C", "toggle_crop", on_press)
 mp.register_event("file-loaded", on_start)
+mp.register_script_message("crop_with_option", on_press)
